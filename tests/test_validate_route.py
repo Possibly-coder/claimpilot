@@ -51,3 +51,15 @@ def test_high_amount_and_low_confidence_go_to_review(db, policy):
     assert decision == "review"
     assert any("auto-submit limit" in r for r in reasons)
     assert any("low extraction confidence" in r for r in reasons)
+
+
+def test_model_notes_are_shown_but_do_not_block(db, policy):
+    claim = _claim(policy)
+    v = validate_claim(db, claim, today=date(2027, 12, 31))
+    result = _result(claim)
+    result.notes = ["model: two dates mentioned; used the loss date"]
+    assert route(result, v, auto_limit=5000, min_confidence=0.8) == ("auto", result.notes)
+
+    result.notes.append("dropped invalid incident_date: 'yesterday'")
+    decision, _ = route(result, v, auto_limit=5000, min_confidence=0.8)
+    assert decision == "review"

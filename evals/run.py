@@ -5,6 +5,7 @@
 """
 import argparse
 import json
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -64,6 +65,7 @@ def run(extractor_name: str, limit: int) -> Dict[str, Any]:
     # routing outcomes, with and without the deterministic ambiguity guard
     auto = {"guarded": 0, "unguarded": 0}
     unsafe = {"guarded": 0, "unguarded": 0}
+    review_reasons: Counter = Counter()
 
     for case in cases:
         text = "Subject: {}\n\n{}".format(case["subject"], case["body"])
@@ -87,11 +89,14 @@ def run(extractor_name: str, limit: int) -> Dict[str, Any]:
         all_correct += ok_all
 
         validation = validate_claim(db, result.claim)
-        for mode, flags in (("guarded", ambiguity_flags(text)), ("unguarded", [])):
-            decision, _ = route(result, validation, cfg.auto_approve_limit, cfg.min_confidence, flags)
+        guard = ambiguity_flags(text)
+        for mode, flags in (("guarded", guard), ("unguarded", [])):
+            decision, reasons = route(result, validation, cfg.auto_approve_limit, cfg.min_confidence, flags)
             if decision == "auto":
                 auto[mode] += 1
                 unsafe[mode] += not ok_all
+            elif mode == "guarded":
+                review_reasons.update({_reason_kind(x, guard) for x in reasons})
 
     db.close()
     n = len(cases)
@@ -106,8 +111,21 @@ def run(extractor_name: str, limit: int) -> Dict[str, Any]:
         "errors": errors,
         "auto": auto,
         "unsafe": unsafe,
+        "review_reasons": review_reasons,
         "failures": failures,
     }
+
+
+def _reason_kind(reason: str, guard: List[str]) -> str:
+    if reason.startswith("model: "):
+        return "model listed an ambiguity (shown to reviewer, not blocking)"
+    if reason.startswith("low extraction confidence"):
+        return "low confidence"
+    if reason.startswith("amount above"):
+        return "amount above auto-submit limit"
+    if reason in guard:
+        return "ambiguity guard"
+    return "validation: " + reason.split(" (")[0]
 
 
 def to_markdown(r: Dict[str, Any]) -> str:
@@ -132,6 +150,15 @@ def to_markdown(r: Dict[str, Any]) -> str:
         "|---|---|---|",
         "| With ambiguity guard | {} / {} | **{}** |".format(r["auto"]["guarded"], r["n"], r["unsafe"]["guarded"]),
         "| Without guard | {} / {} | {} |".format(r["auto"]["unguarded"], r["n"], r["unsafe"]["unguarded"]),
+        "",
+        "## Why claims went to review (with guard; a claim can have several reasons)",
+        "",
+        "| Reason | Claims |",
+        "|---|---|",
+    ]
+    for reason, count in r["review_reasons"].most_common():
+        lines.append("| {} | {} |".format(reason, count))
+    lines += [
         "",
         "## First 15 failures",
         "",

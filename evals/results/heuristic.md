@@ -1,4 +1,4 @@
-# Eval: heuristic (80 cases, 2026-10-27 17:03)
+# Eval: heuristic (80 cases, 2026-10-28 02:13)
 
 | Field | Accuracy |
 |---|---|
@@ -19,6 +19,17 @@
 |---|---|---|
 | With ambiguity guard | 2 / 80 | **0** |
 | Without guard | 25 / 80 | 23 |
+
+## Why claims went to review (with guard; a claim can have several reasons)
+
+| Reason | Claims |
+|---|---|
+| ambiguity guard | 53 |
+| validation: missing loss_type | 44 |
+| validation: missing estimated_amount | 17 |
+| low confidence | 10 |
+| amount above auto-submit limit | 10 |
+| validation: amount exceeds coverage limit | 1 |
 
 ## First 15 failures
 

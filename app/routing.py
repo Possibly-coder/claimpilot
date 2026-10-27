@@ -18,5 +18,8 @@ def route(
     amount = extraction.claim.estimated_amount
     if amount is not None and amount > auto_limit:
         reasons.append("amount above auto-submit limit ({:,.0f})".format(auto_limit))
-    reasons.extend(extraction.notes)
-    return ("review" if reasons else "auto"), reasons
+    # The model lists an ambiguity on almost every email (80/80 in evals), so its notes inform the reviewer
+    # but don't block. Deterministic checks above decide.
+    advisory = [n for n in extraction.notes if n.startswith("model: ")]
+    reasons.extend(n for n in extraction.notes if not n.startswith("model: "))
+    return ("review" if reasons else "auto"), reasons + advisory

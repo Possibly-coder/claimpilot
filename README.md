@@ -66,7 +66,19 @@ flowchart LR
 
 The guard is what makes the system safe to pilot. Without it, 23 of the 25 claims the baseline would auto-submit carry a wrong value, even though validation passed. With it, nothing wrong gets through, but almost nothing is automated. The LLM extractor's job is to raise the automation rate while keeping the wrong-submission count at zero.
 
-**Claude extractor** (`ANTHROPIC_API_KEY=... python -m evals.run --extractor claude`): *results go here after the first run (accuracy, automation rate, cost per claim, latency).*
+**Claude extractor** (`ANTHROPIC_API_KEY=... python -m evals.run --extractor claude`, Claude Haiku 5.5, Oct 28 2026; full output in `evals/results/claude.md`):
+
+| Metric | Rule-based | Claude |
+|---|---|---|
+| All 5 fields correct | 6.2% | **100%** |
+| Auto-submitted (guard on) | 2 / 80 | **14 / 80** |
+| Auto-submitted with a wrong field | 0 | **0** |
+| Cost per claim | $0 | $0.00039 |
+| Latency per claim | <1 ms | 3.2 s |
+
+The first Claude run auto-submitted **0 of 80** despite perfect extraction: the model lists at least one ambiguity on every email, and routing treated each as blocking. Its notes are now shown to the reviewer but don't block; the deterministic checks decide. The remaining 66 go to review because the guard saw several amounts or dates (53), the amount is over the $5,000 auto-submit limit (27), confidence was low (9), or the amount exceeds coverage (5).
+
+Next lever: the guard now blocks claims Claude got right. On real customer emails, measure how often Claude is wrong when the guard fires before relaxing it. These 80 cases are generated, so they are cleaner than production email.
 
 ## Engineering decisions worth discussing
 
