@@ -1,5 +1,7 @@
 # ClaimPilot
 
+**Live demo:** https://claimpilot-dma5.onrender.com (free tier; the first load after idle takes ~1 minute)
+
 **AI intake for insurance claims.** ClaimPilot reads first-notice-of-loss (FNOL) emails and PDF forms, extracts the claim, checks it against the policy book, auto-submits the safe ones to the carrier's legacy claims system, and sends everything else to a human with the reason highlighted.
 
 ![Review queue](docs/review-queue.png)
