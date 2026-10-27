@@ -89,6 +89,20 @@ open http://localhost:8000
 
 With Docker: `docker compose up --build` (Postgres + legacy mock + app on :8000).
 
+### Deploy (Render, free tier)
+
+`render.yaml` defines the app, the mock legacy system (same image, `APP_MODULE=legacy_api.main:app`) and Postgres.
+
+1. Render dashboard → **New → Blueprint** → pick this repo → **Apply**. Leave `LEGACY_API_URL` and
+   `ANTHROPIC_API_KEY` empty for now.
+2. When `claimpilot-legacy` is live, copy its URL into `claimpilot` → Environment → `LEGACY_API_URL`.
+3. Optional: set `ANTHROPIC_API_KEY` to switch from the rule-based extractor to Claude. The demo is public, so set a
+   monthly spend limit in the Anthropic console first.
+4. Check `https://<claimpilot-url>/health` shows `"legacy_writeback": true`.
+
+Free services sleep after ~15 minutes idle; open both URLs a minute before a demo. A claim whose write-back fails
+during a cold start shows as `writeback_failed` and can be re-approved from the queue.
+
 ### API
 
 | Method | Path | Purpose |

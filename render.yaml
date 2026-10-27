@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: claimpilot-legacy
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_MODULE
+        value: legacy_api.main:app
+      - key: LEGACY_FAILURE_RATE
+        value: "0.1"
+      - key: LEGACY_RATE_LIMIT_PER_SEC
+        value: "5"
+
+  - type: web
+    name: claimpilot
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: claimpilot-db
+          property: connectionString
+      - key: LEGACY_API_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAIMPILOT_MODEL
+        value: claude-haiku-5-5
+
+databases:
+  - name: claimpilot-db
+    plan: free
+    databaseName: claimpilot
+    user: claimpilot
